@@ -2,23 +2,94 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, ChevronRight, Lightbulb, TrendingUp, Cpu } from 'lucide-react';
 
 export default function App() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      content: "Hello! I am your AI Concierge for ET. How can I assist you with your finances, investing, or learning today?",
+  const QUESTION_BANK = {
+    "Start": {
+      question: "Welcome to AI Concierge! Let's build your financial profile. What best describes you?",
+      options: [
+        { label: "Student", icon: <User size={14} /> },
+        { label: "Working Professional", icon: <Cpu size={14} /> },
+        { label: "Business Owner", icon: <TrendingUp size={14} /> }
+      ]
+    },
+    "Student": [
+      {
+        question: "Awesome! Are you currently managing pocket money or doing an internship?",
+        options: [
+          { label: "Pocket Money only", icon: <ChevronRight size={14} /> },
+          { label: "Internship/Part-time", icon: <ChevronRight size={14} /> },
+          { label: "No income yet", icon: <ChevronRight size={14} /> }
+        ]
+      },
+      {
+        question: "What is your main financial priority right now?",
+        options: [
+          { label: "Save for a gadget/trip", icon: <ChevronRight size={14} /> },
+          { label: "Learn stock market basics", icon: <Lightbulb size={14} /> },
+          { label: "Manage daily expenses", icon: <ChevronRight size={14} /> }
+        ]
+      }
+    ],
+    "Working Professional": [
+      {
+        question: "Great. Do you run out of money before the end of the month?",
+        options: [
+          { label: "Yes, often", icon: <ChevronRight size={14} /> },
+          { label: "Sometimes", icon: <ChevronRight size={14} /> },
+          { label: "No, I save", icon: <ChevronRight size={14} /> }
+        ]
+      },
+      {
+        question: "What is your primary investment goal?",
+        options: [
+          { label: "Buy a house/car", icon: <TrendingUp size={14} /> },
+          { label: "Retirement", icon: <TrendingUp size={14} /> },
+          { label: "Tax saving", icon: <Lightbulb size={14} /> }
+        ]
+      }
+    ],
+    "Business Owner": [
+      {
+        question: "Do you keep your personal and business finances strictly separate?",
+        options: [
+          { label: "Yes, completely", icon: <ChevronRight size={14} /> },
+          { label: "No, they mix", icon: <ChevronRight size={14} /> },
+          { label: "Trying to", icon: <ChevronRight size={14} /> }
+        ]
+      },
+      {
+        question: "What is your biggest financial challenge right now?",
+        options: [
+          { label: "Managing Cash Flow", icon: <TrendingUp size={14} /> },
+          { label: "Investing profits", icon: <TrendingUp size={14} /> },
+          { label: "Reducing tax burden", icon: <Lightbulb size={14} /> }
+        ]
+      }
+    ],
+    "ProCheck": {
+      question: "Thanks! I’ve learned a lot about you 😊 What would you like me to do next?",
+      options: [
+        { label: "Show insights", icon: <TrendingUp size={14} /> },
+        { label: "Exit", icon: <ChevronRight size={14} /> }
+      ]
     }
+  };
+
+  const DEFAULT_OPTIONS = [
+    { label: "Tips for beginners", icon: <Lightbulb size={14} /> },
+    { label: "Market update", icon: <TrendingUp size={14} /> },
+    { label: "Saving rules", icon: <ChevronRight size={14} /> }
+  ];
+
+  const [activeQuestions, setActiveQuestions] = useState([QUESTION_BANK["Start"]]);
+  const [messages, setMessages] = useState([
+    { id: 1, sender: 'bot', content: QUESTION_BANK["Start"].question }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Thinking...');
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [userAnswers, setUserAnswers] = useState([]);
   const messagesEndRef = useRef(null);
-
-  const QUICK_OPTIONS = [
-    "Student",
-    "Investor",
-    "Learn Investing",
-    "Save Money"
-  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,12 +99,86 @@ export default function App() {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (!isLoading) return;
+    const texts = ['Analyzing profile...', 'Checking resources...', 'Structuring advice...'];
+    let i = 0;
+    setLoadingText(texts[0]);
+    const interval = setInterval(() => {
+      i = (i + 1) % texts.length;
+      setLoadingText(texts[i]);
+    }, 600);
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   const handleSendMessage = async (text) => {
     if (!text.trim()) return;
 
     const userMsg = { id: Date.now(), sender: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
+
+    let promptText = text;
+
+    // Handle onboarding flow intercept
+    if (onboardingStep < activeQuestions.length) {
+      const newAnswers = [...userAnswers, text];
+      setUserAnswers(newAnswers);
+      
+      let nextStep = onboardingStep + 1;
+      let currentQuestions = activeQuestions;
+
+      // At Step 0, branch based on User Persona (Student vs Worker)
+      if (onboardingStep === 0) {
+        let branch = QUESTION_BANK["Working Professional"]; // Default
+        if (text === "Student") branch = QUESTION_BANK["Student"];
+        else if (text === "Business Owner") branch = QUESTION_BANK["Business Owner"];
+        
+        currentQuestions = [QUESTION_BANK["Start"], ...branch, QUESTION_BANK["ProCheck"]];
+        setActiveQuestions(currentQuestions);
+      }
+
+      // Handle branch logic at final Pro Check
+      if (nextStep === currentQuestions.length && currentQuestions[currentQuestions.length-1].question.includes("Thanks!")) {
+        // Wait, the nextStep points outside the array. So this check should be:
+      }
+
+      const isProCheckStep = onboardingStep === currentQuestions.length - 1;
+
+      if (isProCheckStep) {
+        if (text === "Show insights") {
+          nextStep = 999; // trigger insights
+        } else if (text === "Exit") {
+          setIsLoading(false);
+          setOnboardingStep(999);
+          setMessages(prev => [
+            ...prev,
+            { id: Date.now() + 1, sender: 'bot', content: "Okay! Feel free to use the quick options below whenever you're ready to explore." }
+          ]);
+          return;
+        } else {
+          nextStep = 999; // fallback
+        }
+      }
+
+      setOnboardingStep(nextStep);
+
+      if (nextStep < currentQuestions.length) {
+        setIsLoading(true);
+        setTimeout(() => {
+          setIsLoading(false);
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now() + 1, sender: 'bot', content: currentQuestions[nextStep].question }
+          ]);
+        }, 500);
+        return; // Don't call backend yet
+      } else {
+        // End of onboarding (either finished advanced, or jumped via Show Insights)
+        promptText = `My Profile: I am a ${newAnswers[0] || 'User'}. Additional info: ${newAnswers[1] || ''}, ${newAnswers[2] || ''}. Generate my custom profile, recommendations, and suggestions.`;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -42,7 +187,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: promptText }),
       });
 
       if (!response.ok) {
@@ -81,7 +226,7 @@ export default function App() {
       if (profileMatch) {
         return (
           <div className="structured-output">
-            <div className="card profile-card">
+            <div className="card profile-card" style={{ animationDelay: '0.1s' }}>
               <div className="card-title">
                 <User size={16} /> User Profile
               </div>
@@ -91,7 +236,7 @@ export default function App() {
             </div>
 
             {recsMatch && (
-              <div className="card recommendations-card">
+              <div className="card recommendations-card" style={{ animationDelay: '0.3s' }}>
                 <div className="card-title">
                   <TrendingUp size={16} /> Recommendations
                 </div>
@@ -102,12 +247,30 @@ export default function App() {
             )}
 
             {suggMatch && (
-              <div className="card suggestions-card">
+              <div className="card suggestions-card" style={{ animationDelay: '0.5s' }}>
                 <div className="card-title">
                   <Lightbulb size={16} /> Suggestions
                 </div>
                 <div className="card-content">
-                  {suggMatch[1].trim()}
+                  <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+                    {suggMatch[1].trim().split('\n').map((suggestion, index) => {
+                      // Remove leading dashes or bullets if any
+                      const cleanText = suggestion.replace(/^[-*]\s*/, '').trim();
+                      if (!cleanText) return null;
+                      return (
+                        <li key={index} style={{ marginBottom: '8px' }}>
+                          <button 
+                            className="suggestion-btn"
+                            onClick={() => handleSendMessage(cleanText)}
+                            disabled={isLoading}
+                          >
+                            <ChevronRight size={14} style={{ marginRight: '6px' }} />
+                            {cleanText}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               </div>
             )}
@@ -142,10 +305,13 @@ export default function App() {
         
         {isLoading && (
           <div className="message-wrapper bot">
-            <div className="typing-indicator">
-              <div className="dot"></div>
-              <div className="dot"></div>
-              <div className="dot"></div>
+            <div className="typing-indicator" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <div className="dot"></div>
+                <div className="dot"></div>
+                <div className="dot"></div>
+              </div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{loadingText}</span>
             </div>
           </div>
         )}
@@ -154,14 +320,15 @@ export default function App() {
 
       {/* Quick Options */}
       <div className="quick-options">
-        {QUICK_OPTIONS.map((option, index) => (
+        {(onboardingStep < activeQuestions.length ? activeQuestions[onboardingStep].options : DEFAULT_OPTIONS).map((option, index) => (
           <button 
             key={index} 
             className="quick-btn"
-            onClick={() => handleSendMessage(option)}
+            onClick={() => handleSendMessage(option.label)}
             disabled={isLoading}
           >
-            {option}
+            {option.icon}
+            {option.label}
           </button>
         ))}
       </div>
