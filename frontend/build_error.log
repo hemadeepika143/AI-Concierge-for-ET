@@ -1,0 +1,29 @@
+
+> aiconcierge-frontend@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 2501 modules transformed.
+[31mx[39m Build failed in 3.53s
+[31merror during build:
+[31msrc/components/VideoStudioPlayer.jsx (3:47): "Captions" is not exported by "node_modules/lucide-react/dist/esm/lucide-react.js", imported by "src/components/VideoStudioPlayer.jsx".[31m
+file: [36mC:/Users/srima/Downloads/aIconcierge/frontend/src/components/VideoStudioPlayer.jsx:3:47[31m
+[33m
+1: import React, { useState } from 'react';
+2: import { motion, AnimatePresence } from 'framer-motion';
+3: import { Play, Pause, X, Maximize2, FileVideo, Captions } from 'lucide-react';
+                                                  ^
+4: 
+5: export default function VideoStudioPlayer() {
+[31m
+    at getRollupError (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17065:16)
+    at Module.traceVariable (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17477:29)
+    at ModuleScope.findVariable (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:15090:39)
+    at FunctionScope.findVariable (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at Identifier.bind (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5450:40)
+    at CallExpression.bind (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:2828:28)
+    at CallExpression.bind (file:///C:/Users/srima/Downloads/aIconcierge/frontend/node_modules/rollup/dist/es/shared/node-entry.js:12199:15)[39m
